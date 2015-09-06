@@ -1,5 +1,5 @@
 /// <reference path="../quoteProject/jquery.js" />
-function ListBox(dom, option) {
+function BaseListBox(dom, option) {
     if (!dom)//不包含参数时直接返回
         return;
     this.Setting = $.extend({}, this.DefaultSetting(), option);
@@ -10,17 +10,24 @@ function ListBox(dom, option) {
 /**
  * 用于创建系统的默认设置
  */
-ListBox.prototype.DefaultSetting = function () {
+BaseListBox.prototype.DefaultSetting = function () {
     return {
-        Data: [],//数据
-        Format: function () { },//item格式化
-        AfterInitItem: null,//item格式化后执行的事件
-        AfterInit: null//listbox init后执行的事件
+        Prefix: "lc_",
+        RootType: "ul",//控件根节点类型
+        ListItemType: "li",//控件item类型
+        RootClass: "",//根节点类
+        ListItemClass: "",//item类
+        AfterInit: null,
+        AfterInitItem: null,
+        SortFunction: null,
+        Data: [],
+        Format: function () { }
     }
 }
-ListBox.prototype.Init = function () {
+BaseListBox.prototype.Init = function () {
     var self = this;
-    this.Ul = $("<ul></ul>");
+    this.Ul = $(document.createElement(this.Setting.RootType));
+    this.Ul.addClass(this.Setting.RootClass);
     $(this.Root).append(this.Ul);
     for (var i = 0; i < this.Setting.Data.length; i++) {
         this.InitItem(this.Setting.Data[i]);
@@ -29,9 +36,10 @@ ListBox.prototype.Init = function () {
         this.Setting.AfterInit.call(this);
     }
 }
-ListBox.prototype.InitItem = function (data) {
+BaseListBox.prototype.InitItem = function (data) {
     var self = this;
-    var li = $("<li></li>");
+    var li = $(document.createElement(this.Setting.ListItemType));
+    li.addClass(this.Setting.ListItemClass);
     data.ListBoxItem = li;
     $(li).append($(this.Setting.Format(data)));
     this.Ul.append(li);
@@ -40,7 +48,7 @@ ListBox.prototype.InitItem = function (data) {
     }
     return data;
 }
-ListBox.prototype.AddItem = function (data) {
+BaseListBox.prototype.AddItem = function (data) {
     var self = this;
     if (this.Setting.Data.indexOf(data) != -1)
         return;
@@ -49,22 +57,35 @@ ListBox.prototype.AddItem = function (data) {
     $(this.Ul).append($(this.InitItem(data).ListBoxItem));
     return data;
 }
-ListBox.prototype.RemoveItem = function (value) {
+BaseListBox.prototype.RemoveItem = function (value) {
     this.Setting.Data.splice(this.Setting.Data.indexOf(value), 1);
     $(value.ListBoxItem).remove();
     delete value.ListBoxItem;
 }
-ListBox.prototype.Sort = function (func) {
+BaseListBox.prototype.Sort = function (func) {
+    this.Setting.SortFunction = func || this.Setting.SortFunction;
     this.Setting.Data.sort(func);
     for (var i = 0; i < this.Setting.Data.length; i++) {
         this.Setting.Data[i].ListBoxItem.detach();
         this.Ul.prepend(this.Setting.Data[i].ListBoxItem);
     }
 }
-ListBox.prototype.Destroy = function () {
+BaseListBox.prototype.Destroy = function () {
     this.Ul.empty();
     this.Ul.remove();
     for (var i = 0; i < this.Setting.Data.length; i++) {
         delete this.Setting.Data[i].ListBoxItem
     }
+}
+BaseListBox.prototype.Show = function () {
+    this.Ul.show();
+}
+BaseListBox.prototype.Hide = function () {
+    this.Ul.hide();
+}
+BaseListBox.prototype.ShowAllItem = function () {
+    this.Ul.children().show();
+}
+BaseListBox.prototype.HideAllItem = function () {
+    this.Ul.children().hide();
 }
